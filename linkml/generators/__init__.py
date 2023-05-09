@@ -18,6 +18,7 @@ __all__ = [
     "owlgen",
     "protogen",
     "pythongen",
+    "djangogen",
     "rdfgen",
     "shexgen",
     "sssomgen",
@@ -28,5 +29,6 @@ __all__ = [
 ]
 GENERATOR_BASE = "0.9"
 
+DJANGO_GEN_VERSION = GENERATOR_BASE + ".0"
 PYTHON_GEN_VERSION = GENERATOR_BASE + ".0"
 JAVA_GEN_VERSION = GENERATOR_BASE + ".0"
