@@ -1,6 +1,8 @@
 metamodel/metamodel.py-PREV
 temp/
 output/
+djangoapp/migrations/*
+djangoapp/models.py
 
 # sphinx
 docs/_sources
@@ -109,3 +111,5 @@ Pipfile.lock
 
 # User defined
 .vscode/*
+/tests/test_generators/djangoapp/models.py
+/tests/test_generators/djangoapp/migrations/
