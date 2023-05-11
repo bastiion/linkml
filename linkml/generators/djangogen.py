@@ -39,7 +39,7 @@ class MethodSignature:
         self.arguments = arguments
 
     def __str__(self):
-        return f"{self.methodName}({', '.join([f'{k}: {v}' for k, v in self.arguments.items()])})"
+        return f"{self.methodName}({', '.join([f'{k}={v}' for k, v in self.arguments.items()])})"
 
 
 def wrapInQuotes(s: str) -> str:
@@ -47,7 +47,7 @@ def wrapInQuotes(s: str) -> str:
 
 
 @dataclass
-class PythonGenerator(Generator):
+class DjangoGenerator(Generator):
     """
     Generates Django Models from a LinkML model
 
@@ -133,14 +133,6 @@ class PythonGenerator(Generator):
 
     def gen_schema(self) -> str:
         # The metamodel uses Enumerations to define itself, so don't import if we are generating the metamodel
-        enumimports = (
-            ""
-            if self.genmeta
-            else "from linkml_runtime.linkml_model.meta import EnumDefinition, PermissibleValue, PvFormulaOptions\n"
-        )
-        handlerimport = (
-            "from linkml_runtime.utils.enumerations import EnumDefinitionImpl"
-        )
         split_description = ""
         if self.schema.description:
             split_description = "\n#   ".join(
@@ -162,30 +154,15 @@ class PythonGenerator(Generator):
 
 from django.db import models
 from django.db.models import Model
+import uuid
 import re
-from jsonasobj2 import JsonObj, as_dict
-from typing import Optional, List, Union, Dict, ClassVar, Any
-from dataclasses import dataclass
-{enumimports}
-from linkml_runtime.utils.slot import Slot
-from linkml_runtime.utils.metamodelcore import empty_list, empty_dict, bnode
-from linkml_runtime.utils.yamlutils import YAMLRoot, extended_str, extended_float, extended_int
-from linkml_runtime.utils.dataclass_extensions_376 import dataclasses_init_fn_with_kwargs
-from linkml_runtime.utils.formatutils import camelcase, underscore, sfx
-{handlerimport}
-from rdflib import Namespace, URIRef
-from linkml_runtime.utils.curienamespace import CurieNamespace
 {self.gen_imports()}
 
 metamodel_version = "{self.schema.metamodel_version}"
 version = {'"' + self.schema.version + '"' if self.schema.version else None}
 
-# Namespaces
-{self.gen_namespaces()}
+extended_str = str
 
-
-# Types
-{self.gen_typedefs()}
 # Class references
 {self.gen_references()}
 
@@ -433,6 +410,7 @@ version = {'"' + self.schema.version + '"' if self.schema.version else None}
 
         return (f"\nclass {self.class_or_type_name(cls.name)}{parentref}:{wrapped_description}"
                 + (f"\n\t{slotdefs}" if slotdefs else "")
+                + f"\n\tpass\n\n"
                 )
 
     def gen_inherited_slots(self, cls: ClassDefinition) -> str:
@@ -732,15 +710,16 @@ version = {'"' + self.schema.version + '"' if self.schema.version else None}
                     "related_name": wrapInQuotes(slot.name)
                 }, **options})
             else:
+                method_name = self.gen_django_model_function(primary_type)
                 call_sig = MethodSignature(method_name, {**{
-                    "to": wrapInQuotes(prox_type),
-                    "related_name": wrapInQuotes(slot.name),
+                    "name": wrapInQuotes(slot.name),
                 }, **options})
 
         else:
             if is_primitive:
                 if slot.identifier:
                     method_name = "UUIDField"
+                    options["default"] = "uuid.uuid4"
                 else:
                     method_name = self.gen_django_model_function(primary_type)
                 if advanced_type:
@@ -755,6 +734,7 @@ version = {'"' + self.schema.version + '"' if self.schema.version else None}
                 }, **options})
             else:
                 method_name = "ForeignKey"
+                prox_type = slot.range
                 if slot.required:
                     call_sig = MethodSignature(method_name, {
                         "to": wrapInQuotes(prox_type),
@@ -1315,7 +1295,7 @@ class {enum_name}(EnumDefinitionImpl):
         return f'{prefix_string}"""{string}"""'
 
 
-@shared_arguments(PythonGenerator)
+@shared_arguments(DjangoGenerator)
 @click.command()
 @click.option(
     "--head/--no-head", default=True, show_default=True, help="Emit metadata heading"
@@ -1355,7 +1335,7 @@ def cli(
         **args,
 ):
     """Generate python classes to represent a LinkML model"""
-    gen = PythonGenerator(
+    gen = DjangoGenerator(
         yamlfile,
         emit_metadata=head,
         genmeta=genmeta,
