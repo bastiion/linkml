@@ -1,0 +1,129 @@
+id: https://w3id.org/linkml/examples/personinfo
+name: personinfo
+description: |-
+  Information about people, based on [schema.org](http://schema.org)
+license: https://creativecommons.org/publicdomain/zero/1.0/
+default_curi_maps:
+  - semweb_context
+imports:
+  - linkml:types
+prefixes:
+  personinfo: https://w3id.org/linkml/examples/personinfo/
+  linkml: https://w3id.org/linkml/
+  schema: http://schema.org/
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  prov: http://www.w3.org/ns/prov#
+  GSSO: http://purl.obolibrary.org/obo/GSSO_
+  famrel: https://example.org/FamilialRelations#
+  # DATA PREFIXES
+  P: http://example.org/P/
+  ROR: http://example.org/ror/
+  CODE: http://example.org/code/
+  GEO: http://example.org/geoloc/
+default_prefix: personinfo
+default_range: string
+
+emit_prefixes:
+  - rdf
+  - rdfs
+  - xsd
+  - skos
+
+classes:
+
+  Person:
+    description: >-
+      A person (alive, dead, undead, or fictional).
+    class_uri: schema:Person
+    attributes:
+      rating:
+        range: integer
+        minimum_value: 0
+        maximum_value: 10
+    slots:
+      - full_name
+      - primary_email
+      - birth_date
+      - age_in_years
+      - gender
+      - employed_at
+      - imported_at
+      - tag
+      - places
+    slot_usage:
+      primary_email:
+        pattern: "^\\S+@[\\S+\\.]+\\S+"
+      age_in_years:
+        recommended: true
+
+
+  Organization:
+    description: >-
+      An organization such as a company or university
+    class_uri: schema:Organization
+    slots:
+      - mission_statement
+      - founding_date
+      - founding_location
+
+  Place:
+    slots:
+      - id
+      - name
+      
+slots:
+  id:
+    identifier: true
+    slot_uri: schema:identifier
+  full_name:
+    slot_uri: schema:name
+    required: true
+  imported_at:
+    slot_uri: schema:dateCreated
+    range: datetime
+    annotations:
+      django_additional_attributes: "auto_now_add=True"
+  name:
+    slot_uri: schema:name
+  tag:
+    slot_uri: schema:keywords
+    range: string
+    multivalued: true
+  places:
+    slot_uri: schema:location
+    range: Place
+    multivalued: true
+  primary_email:
+    slot_uri: schema:email
+  birth_date:
+    slot_uri: schema:birthDate
+  employed_at:
+    range: Organization
+  age_in_years:
+    range: integer
+    minimum_value: 0
+    maximum_value: 999
+  gender:
+    slot_uri: schema:gender
+    range: GenderType
+  mission_statement:
+  founding_date:
+  founding_location:
+    range: Place
+
+
+enums:
+  GenderType:
+    permissible_values:
+      nonbinary man:
+        meaning: GSSO:009254
+      nonbinary woman:
+        meaning: GSSO:009253
+      transgender woman:
+        meaning: GSSO:000384
+      transgender man:
+        meaning: GSSO:000372
+      cisgender man:
+        meaning: GSSO:000371
+      cisgender woman:
+        meaning: GSSO:000385
